@@ -1,23 +1,17 @@
 import pandas as pd
 import numpy as np
-import random
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import matplotlib.pyplot as plt
-import itertools
-
 
 df = pd.read_csv('90day.csv')
-
-
 df_modified = df.drop(df.columns[[0, 1, 2, 3, -1, -5, -8, -7]], axis=1)
 df_modified = df_modified.apply(pd.to_numeric, errors='coerce')
 df_modified.fillna(df_modified.mean(), inplace=True)
-
 
 original_cols = df.columns.tolist()
 dropped_cols = [original_cols[i] for i in [0, 1, 2, 3, 4, 5, -1, -5, -8, -7]]
@@ -27,14 +21,11 @@ y_index = remaining_cols.index(original_cols[-6])
 X = df_modified.drop(df_modified.columns[[y_index]], axis=1)
 y = df_modified.iloc[:, y_index]
 
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, stratify=y)
-
 
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
-
 
 best_rf_params = {
     'n_estimators': 200,
@@ -62,7 +53,6 @@ best_mlp_params = {
     'max_iter': 2000
 }
 
-
 rf = RandomForestClassifier(**best_rf_params)
 rf.fit(X_train_scaled, y_train)
 
@@ -72,15 +62,12 @@ lr.fit(X_train_scaled, y_train)
 mlp = MLPClassifier(**best_mlp_params)
 mlp.fit(X_train_scaled, y_train)
 
-
 y_test_prob_rf = rf.predict_proba(X_test_scaled)[:, 1]
 y_test_prob_lr = lr.predict_proba(X_test_scaled)[:, 1]
 y_test_prob_mlp = mlp.predict_proba(X_test_scaled)[:, 1]
 
-
 weights = np.ones(3)
 eta = 0.001
-
 
 history = {
     'weights': [],
@@ -90,7 +77,6 @@ history = {
     'f1': [],
     'auc': []
 }
-
 
 predictions = np.array([y_test_prob_rf, y_test_prob_lr, y_test_prob_mlp])
 final_prediction = np.zeros_like(y_test_prob_rf)
@@ -135,7 +121,6 @@ print("Recall:", history['recall'][-1])
 print("F1 Score:", history['f1'][-1])
 print("AUC:", history['auc'][-1])
 
-
 rf_feature_importances = pd.DataFrame({'Feature': X.columns, 'Importance': rf.feature_importances_})
 rf_feature_importances['Importance'] /= rf_feature_importances['Importance'].sum()
 rf_feature_importances = rf_feature_importances.sort_values(by='Importance', ascending=False)
@@ -151,20 +136,19 @@ combined_importance = (rf_feature_importances['Importance'] * weights[0] +
                        lr_hazard_ratios['Hazard Ratio'] * weights[1] +
                        mlp_feature_importances['Importance'] * weights[2])
 combined_feature_importances = pd.DataFrame({'Feature': rf_feature_importances['Feature'], 'Importance': combined_importance})
-combined_feature_importances['Importance'] /= combined_feature_importances['Importance'].sum()  # Normalize to sum up to 1
+combined_feature_importances['Importance'] /= combined_feature_importances['Importance'].sum()
 combined_feature_importances = combined_feature_importances.sort_values(by='Importance', ascending=False)
 
 print("\nCombined Feature Importances - MWU")
 print(combined_feature_importances)
-
 
 def plot_feature_importance(importances, title):
     fig, ax = plt.subplots(figsize=(10, 8))
     sorted_importances = importances.sort_values(by='Importance', ascending=False)
     ax.bar(sorted_importances['Feature'], sorted_importances['Importance'], color='red')
     ax.set_title(title)
-    ax.set_xlabel('Importance')
-    ax.set_ylabel('Feature')
+    ax.set_xlabel('Feature')
+    ax.set_ylabel('Importance')
     plt.xticks(rotation=90)
     plt.show()
 
