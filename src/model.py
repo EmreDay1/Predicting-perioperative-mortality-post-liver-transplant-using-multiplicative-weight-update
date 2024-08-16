@@ -14,7 +14,7 @@ import itertools
 df = pd.read_csv('90day.csv')
 
 
-df_modified = df.drop(df.columns[[0, 1, 2, 3, 4, 5, -1, -5, -8, -7]], axis=1)
+df_modified = df.drop(df.columns[[0, 1, 2, 3, -1, -5, -8, -7]], axis=1)
 df_modified = df_modified.apply(pd.to_numeric, errors='coerce')
 df_modified.fillna(df_modified.mean(), inplace=True)
 
